@@ -18,6 +18,7 @@ public class QuizActivity extends AppCompatActivity {
 
     private  static final String TAG = "QuizActivity";
     private static final String KEY_INDEX = "index";
+    private static final String QUESTION_LIST = "Question";
 
 
     private Question[] mQuestionBank = new Question[]{
@@ -40,14 +41,17 @@ public class QuizActivity extends AppCompatActivity {
         if (savedInstanceState != null)
         {
             mCurrentIndex = savedInstanceState.getInt(KEY_INDEX, 0);
+            // Save whether question has been answered.  Do not let user answer again.
+            int[] mQuestionAnswerArray = savedInstanceState.getIntArray(QUESTION_LIST);
+            for (int i=0; i<mQuestionBank.length; i++)         {
+                mQuestionBank[i].setAnswered(mQuestionAnswerArray[i]);
+            }
         }
 
         mQuestionTextView=(TextView)findViewById (R.id.question_text_view);
 
 
         mTrueButton = (Button) findViewById(R.id.true_button);
-        mFalseButton = (Button) findViewById(R.id.false_button);
-
         mTrueButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -57,6 +61,7 @@ public class QuizActivity extends AppCompatActivity {
             }
         });
 
+        mFalseButton = (Button) findViewById(R.id.false_button);
         mFalseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -115,6 +120,11 @@ public class QuizActivity extends AppCompatActivity {
         super.onSaveInstanceState(savedInstanceState);
         Log.i(TAG, "onSaveInstanceState");
         savedInstanceState.putInt(KEY_INDEX, mCurrentIndex);
+        int[] mQuestionAnswerArray = new int[mQuestionBank.length];
+        for (int i=0; i<mQuestionBank.length; i++)         {
+            mQuestionAnswerArray[i] = mQuestionBank[i].isAnswered();
+        }
+        savedInstanceState.putIntArray(QUESTION_LIST, mQuestionAnswerArray);
     }
 
     @Override
@@ -135,6 +145,18 @@ public class QuizActivity extends AppCompatActivity {
     {
         int question = mQuestionBank[mCurrentIndex].getTextResId();
         mQuestionTextView.setText(question);
+        setButtons();
+    }
+
+    private void setButtons() {
+        if (mQuestionBank[mCurrentIndex].isAnswered() > 0) {
+            // make buttons disabled
+            mTrueButton.setEnabled(false);
+            mFalseButton.setEnabled(false);
+        } else {
+            mTrueButton.setEnabled(true);
+            mFalseButton.setEnabled(true);
+        }
     }
 
     private void checkAnswer(boolean userPressedTrue) {
@@ -144,14 +166,17 @@ public class QuizActivity extends AppCompatActivity {
 
         if (userPressedTrue == answerIsTrue)
         {
+            mQuestionBank[mCurrentIndex].setAnswered(2);
             messageResId = R.string.correct_toast;
         }
 
         else
             {
+                mQuestionBank[mCurrentIndex].setAnswered(1);
                 messageResId = R.string.incorrect_toast;
             }
 
-            Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show();
+        setButtons();
+        Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show();
     }
 }
